@@ -59,8 +59,7 @@ function writeOauthState(next) {
 
 /**
  * 포크(realmi-lab/sprag-fork2, 2026-11)에서는 기본으로 꺼져 있습니다. 켜면 Claude Code 의
- * OAuth 액세스 토큰을 키체인에서 읽어 문서에 없는 엔드포인트로 보내므로, 그 일을 하지 않는
- * 쪽을 기본으로 둡니다. `sprag mode oauth-budget` 이나 SPRAG_OAUTH_BUDGET=1 로 켜고,
+ * OAuth 액세스 토큰을 키체인에서 읽으므로, 사용자가 켤 때만 동작하게 했습니다. `sprag mode oauth-budget` 이나 SPRAG_OAUTH_BUDGET=1 로 켜고,
  * SPRAG_OAUTH_BUDGET=0 은 설정과 상관없이 끕니다.
  */
 export function oauthBudgetEnabled(cfg = loadConfig(), env = process.env) {

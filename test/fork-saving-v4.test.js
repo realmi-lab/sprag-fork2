@@ -82,7 +82,7 @@ const MEASURED = {
 };
 
 for (const [name, m] of Object.entries(MEASURED)) {
-  test(`replay ${name}: v4 lands near the measured saving, v3 overstated it`, () => {
+  test(`replay ${name}: v4 lands near the measured saving`, () => {
     const base = {
       calls: m.calls, mainCtx: 277565, followUps: 30, promptTokens: 1283, resultTokens: m.resultChars / 4, rates: OPUS, subActual: m.subActual,
     };

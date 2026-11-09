@@ -28,7 +28,7 @@
  * rate that is not known makes the saving null; nothing is filled in.
  *
  * Modified in realmi-lab/sprag-fork2 (2026-11), see FORK_CHANGES.md. Three
- * optional inputs correct what v3 overstated; route-scan passes all three
+ * optional inputs make the estimate more conservative; route-scan passes all three
  * (basis 'v4'), and leaving them out reproduces v3 exactly:
  *   skipFirstWrite  the subagent's first-call new input is its own system
  *                   prompt, tool list and brief, which the main model would

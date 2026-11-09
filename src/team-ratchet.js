@@ -158,12 +158,10 @@ export function teamRuleText(r, { lang = 'en', agent = 'claude' } = {}) {
   return typeof r?.text === 'string' ? sanitizeTeamText(r.text, TEAM_RULE_MAX_CHARS) : '';
 }
 
-// Fork (realmi-lab/sprag-fork2, 2026-11). Preset bundles are signed so that a
-// compromised server cannot push text into every session (preset-sign.js), but
-// team rule text arrives unsigned from the same backend and lands in a file
-// that the global CLAUDE.md imports. Until it is signed, the client bounds what
-// one row can do: one line, a length cap, a row cap, and no `@path` tokens,
-// which Claude Code would follow as imports of arbitrary local files.
+// Fork (realmi-lab/sprag-fork2, 2026-11). Team rule text lands in a file that
+// the global CLAUDE.md imports, so the client bounds what one row can do: one
+// line, a length cap, a row cap, and no `@path` tokens, which Claude Code would
+// follow as imports of local files.
 export const TEAM_RULE_MAX_CHARS = 500;
 export const TEAM_RULES_MAX = 60;
 export const TEAM_NAME_MAX_CHARS = 80;

@@ -1,6 +1,5 @@
-> **Unofficial fork.** This is [realmi-lab/sprag-fork2](https://github.com/realmi-lab/sprag-fork2), a modified fork of [rootstudioyaml/sprag](https://github.com/rootstudioyaml/sprag) based on v3.109.0. It is not maintained or endorsed by the sprag project; report problems with this fork here, not upstream.
-> What changed and why: [FORK_CHANGES.md](FORK_CHANGES.md).
-> The figures further down are upstream's own measurements, made with the savings ledger (v3) and the uncapped document baseline that this fork corrects.
+> **Fork of sprag.** This branch of [realmi-lab/sprag-fork2](https://github.com/realmi-lab/sprag-fork2) builds on [sprag](https://github.com/rootstudioyaml/sprag) v3.109.0 with a few adjustments. Please send questions about this fork here.
+> What changed: [FORK_CHANGES.md](FORK_CHANGES.md) (Korean).
 
 <div align="center">
 
