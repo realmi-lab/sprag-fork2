@@ -8,6 +8,10 @@ import { readResetMarks, isBeforeReset } from '../saved-reset.cjs';
 import { codexPriceBook, readCodexPrices } from './cache-policy.js';
 
 const hash = (value) => createHash('sha256').update(value).digest('hex');
+// Fork (realmi-lab/sprag-fork2, 2026-11): the same cap as READ_CAP_TOKENS in
+// src/doc2md-ledger.cjs (a test pins the two together): one Read never puts
+// more than ~44,000 tokens into context, so a larger XML baseline is unspendable.
+export const CODEX_READ_CAP_TOKENS = 44_000;
 const ledgerDir = ({ home = codexUserDir(), dir = userDataDir() } = {}) => join(dir, 'codex-doc2md', hash(resolve(home)));
 const finite = (n) => Number.isSafeInteger(n) && n >= 0;
 
@@ -23,8 +27,9 @@ export function estimateCodexDocument(source, meta, { model, provider, home, dir
   const book = codexPriceBook(provider, prices === undefined ? readCodexPrices({ home, dir, now }) : prices, { home });
   const rate = book?.prices?.[model]?.input;
   if (!Number.isFinite(rate) || rate < 0) return unknown('unpriced-model');
-  const baseline = Math.ceil(meta.markupBytes / 4), tokens = Math.ceil(meta.markdownBytes / 4);
-  return { usd: (baseline - tokens) * rate, baseline, tokens, savedTokens: baseline - tokens,
+  const rawBaseline = Math.ceil(meta.markupBytes / 4), tokens = Math.ceil(meta.markdownBytes / 4);
+  const baseline = Math.min(rawBaseline, CODEX_READ_CAP_TOKENS);
+  return { usd: (baseline - tokens) * rate, baseline, tokens, savedTokens: baseline - tokens, capped: baseline < rawBaseline,
     method: 'office-xml-vs-markdown-bytes/4', model, provider, inputRate: rate,
     priceSource: book.source, priceCheckedAt: book.checkedAt };
 }

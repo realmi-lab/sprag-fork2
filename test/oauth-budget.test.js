@@ -32,7 +32,8 @@ function clearState() {
 }
 
 // 기본으로 켜져 있으므로 빈 설정이 켜짐이고, `sprag mode no-oauth-budget` 이 꺼짐입니다.
-const ON = {};
+// Fork (realmi-lab/sprag-fork2): the budget is opt-in, so "on" has to be said.
+const ON = { statusline: { oauthBudget: true } };
 const OFF = { statusline: { oauthBudget: false } };
 const TOKEN = 'sk-ant-oat01-SECRET-TOKEN-VALUE';
 
@@ -244,13 +245,17 @@ function readFileState() {
   return JSON.parse(readFileSync(statePath(), 'utf8'));
 }
 
-test('기본값: 설정이 비어 있으면 켜져 있다', async () => {
+// Fork (realmi-lab/sprag-fork2, 2026-11): opt-in, because it reads the OAuth token.
+test('기본값: 설정이 비어 있으면 꺼져 있고, 명시해야 켜진다', async () => {
   const { oauthBudgetEnabled } = await import('../src/oauth-budget.js');
-  assert.equal(oauthBudgetEnabled({}, {}), true);
-  assert.equal(oauthBudgetEnabled({ statusline: {} }, {}), true);
+  assert.equal(oauthBudgetEnabled({}, {}), false);
+  assert.equal(oauthBudgetEnabled({ statusline: {} }, {}), false);
   assert.equal(oauthBudgetEnabled(OFF, {}), false);
   assert.equal(oauthBudgetEnabled({}, { SPRAG_OAUTH_BUDGET: '0' }), false);
-  assert.equal(oauthBudgetEnabled({}, { CLAUDE_CODE_USE_BEDROCK: '0' }), true);
+  assert.equal(oauthBudgetEnabled({}, { CLAUDE_CODE_USE_BEDROCK: '0' }), false);
+  assert.equal(oauthBudgetEnabled({ statusline: { oauthBudget: true } }, {}), true);
+  assert.equal(oauthBudgetEnabled({}, { SPRAG_OAUTH_BUDGET: '1' }), true);
+  assert.equal(oauthBudgetEnabled({ statusline: { oauthBudget: true } }, { SPRAG_OAUTH_BUDGET: '0' }), false);
 });
 
 test('refresh: Pro 와 Max 로그인은 요청하지 않고 하루 쉰다', async () => {

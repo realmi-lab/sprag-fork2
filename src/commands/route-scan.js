@@ -119,13 +119,16 @@ export async function run({ args, hasFlag, numArg }) {
         console.log(`            ${lang === 'ko' ? '룰' : 'rule'}: ${e.rule || '(unattributed)'}`);
       }
       console.log('');
+      // Fork (realmi-lab/sprag-fork2, 2026-11): v4 is the current basis; v3
+      // events outside the scan window keep the figure they were recorded with.
+      const v4Runs = events.filter((e) => e.basis === 'v4').length;
       const v3Runs = events.filter((e) => e.basis === 'v3').length;
       console.log(lang === 'ko'
-        ? '금액은 실행 1건마다 "그 에피소드에서 가장 비싼 모델이 같은 일을 직접 했을 때의 비용"에서 실제로 든 비용을 뺀 값입니다. 직접 했다면 호출마다 다시 읽었을 캐시 컨텍스트와 이후 호출에 쌓였을 도구 결과를 앞쪽에 넣고, 위임 프롬프트와 돌아온 결과를 다시 읽는 비용은 실제 비용 쪽에 넣습니다.'
-        : 'Each amount, per run, is what the most expensive model in that episode would have cost doing the same work itself, minus what delegating actually cost. The first side counts the cached context it would have re-read on every call and the tool results it would have carried into later calls; the second adds the delegation prompt and the returned report, re-read on later calls.');
+        ? '금액은 실행 1건마다 "그 에피소드에서 가장 비싼 모델이 같은 일을 직접 했을 때의 비용"에서 실제로 든 비용을 뺀 값입니다. 직접 했다면 다시 읽었을 캐시 컨텍스트(이 작업에 메인 모델이 보통 쓰는 호출 수만큼)와 이후 호출에 쌓였을 도구 결과를 앞쪽에 넣습니다. 위임 프롬프트, 돌아온 결과를 다시 읽는 비용, 위임을 지시하고 결과를 읽는 메인 호출 두 번은 실제 비용 쪽에 넣습니다. 하위 에이전트의 시작 비용(시스템 프롬프트·도구 정의)은 메인이 쓸 일이 없으므로 앞쪽에 넣지 않습니다.'
+        : 'Each amount, per run, is what the most expensive model in that episode would have cost doing the same work itself, minus what delegating actually cost. The first side counts the cached context it would have re-read (for as many calls as the main model usually takes on this kind of work) and the tool results it would have carried into later calls. The second adds the delegation prompt, the returned report re-read on later calls, and the two main calls that issue the delegation and read its report. The subagent\'s start-up input (its system prompt and tools) is left out of the first side: the main model would never have written it.');
       console.log(lang === 'ko'
-        ? `메인 세션 기록을 읽지 못한 실행과 이 계산법 이전 기록(${events.length - v3Runs}건)은 토큰 수를 고정하고 모델 가격 차이만 본 이전 방식입니다. 이번 목록에서 새 방식은 ${v3Runs}건입니다.`
-        : `Runs whose main-session numbers could not be read, and records from before this method (${events.length - v3Runs}), use the older price-gap method with token counts held constant. ${v3Runs} in this list use the new one.`);
+        ? `새 방식(v4) ${v4Runs}건, 이전 방식(v3) ${v3Runs}건, 메인 세션 기록이 없어 토큰 수를 고정하고 모델 가격 차이만 본 방식 ${events.length - v4Runs - v3Runs}건입니다. v3 기록은 위임 비용을 실제보다 작게 잡아 절감액이 큽니다.`
+        : `${v4Runs} in this list use the current method (v4), ${v3Runs} the previous one (v3), and ${events.length - v4Runs - v3Runs} the price-gap method with token counts held constant, used when the main-session numbers could not be read. v3 figures understate what delegating cost, so they read high.`);
       return;
     }
 

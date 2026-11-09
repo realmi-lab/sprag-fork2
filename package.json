@@ -85,11 +85,11 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/rootstudioyaml/sprag.git"
+    "url": "git+https://github.com/realmi-lab/sprag-fork2.git"
   },
   "homepage": "https://sprag.io",
   "bugs": {
-    "url": "https://github.com/rootstudioyaml/sprag/issues"
+    "url": "https://github.com/realmi-lab/sprag-fork2/issues"
   },
   "author": "DeepPulse (https://www.youtube.com/@DeepPulseKR)",
   "dependencies": {

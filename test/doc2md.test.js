@@ -427,7 +427,8 @@ test('each format is priced against the fallback it actually has', () => {
   // A deck never reaches the model as an attachment at all; the fallback is
   // unzipping it, so the body XML is what the conversion is measured against.
   const pptx = ledger.estimateSaving({ ext: '.pptx', markupBytes: 400_000, markdown });
-  assert.equal(pptx.baseline, 100_000);
+  // Fork (realmi-lab/sprag-fork2): capped at what one Read can put into context.
+  assert.equal(pptx.baseline, ledger.READ_CAP_TOKENS);
   assert.ok(pptx.usd > pdf.usd);
 
   // A container whose markup could not be measured claims nothing.

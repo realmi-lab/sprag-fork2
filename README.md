@@ -1,3 +1,6 @@
+> **Fork of sprag.** This branch of [realmi-lab/sprag-fork2](https://github.com/realmi-lab/sprag-fork2) builds on [sprag](https://github.com/rootstudioyaml/sprag) v3.109.0 with a few adjustments. Please send questions about this fork here.
+> What changed: [FORK_CHANGES.md](FORK_CHANGES.md) (Korean).
+
 <div align="center">
 
 <picture>

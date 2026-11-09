@@ -35,7 +35,7 @@ Behind a LiteLLM proxy (Bedrock and friends), Claude Code's stdin never carries 
 
 Enterprise users who sign in with claude.ai do not get `rate_limits` in the statusline input either. The statusline now reads `extra_usage` from `GET https://api.anthropic.com/api/oauth/usage` and draws `💳 budget ▰▱ 54% $271/$500` in the same place.
 
-- On by default. Turn it off with `sprag mode no-oauth-budget` (back on with `sprag mode oauth-budget`), or set `SPRAG_OAUTH_BUDGET=0`.
+- Off by default in this fork (realmi-lab/sprag-fork2), because turning it on reads Claude Code's OAuth token from the keychain. Turn it on with `sprag mode oauth-budget` or `SPRAG_OAUTH_BUDGET=1`; `sprag mode no-oauth-budget` or `SPRAG_OAUTH_BUDGET=0` turns it off again.
 - It stays out of the way for everyone else: a gateway, `ANTHROPIC_API_KEY` or `ANTHROPIC_AUTH_TOKEN`, or Bedrock, Vertex or Foundry skips it before any token is read. A Pro or Max login (`subscriptionType` in the stored credentials) skips the request and rests for 24 hours, since those plans get `rate_limits`.
 - Source priority: ① `rate_limits` from the statusline input, ② the LiteLLM budget, ③ `/api/oauth/usage`. When an earlier source supplies a window, this one does not run at all.
 - The endpoint is not in the official documentation. If the response has a different shape (no `extra_usage`, extra usage disabled, a non-USD currency), nothing is drawn.

@@ -72,7 +72,8 @@ test('syncAllFiles: off writes the short notice, on restores the full rendering'
   mr.syncAllFiles();
   const full = readFileSync(GLOBAL_FILE, 'utf8');
   assert.match(full, /## Rules/);
-  assert.match(full, /이미 승인했습니다/);
+  // Fork (realmi-lab/sprag-fork2): the header names both rule sources.
+  assert.match(full, /사용자가 승인한 룰에 들어맞는 요청이면/);
 
   sw.setRoutingEnabled(false);
   mr.syncAllFiles();
@@ -103,7 +104,7 @@ test('syncAllFiles: rule-less files from harness init follow the switch both way
   const projFile = join(proj, '.claude', 'ratchet-model.md');
   mkdirSync(join(proj, '.claude'), { recursive: true });
   const empty = mr.renderModelRatchet([]);
-  assert.match(empty, /이미 승인했습니다/);
+  assert.match(empty, /사용자가 승인한 룰에 들어맞는 요청이면/);
   writeFileSync(GLOBAL_FILE, empty);
   writeFileSync(projFile, empty);
   const untouched = join(dir, 'other-proj', '.claude', 'ratchet-model.md');

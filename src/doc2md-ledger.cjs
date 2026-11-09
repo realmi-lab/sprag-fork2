@@ -84,6 +84,16 @@ const LEDGER_VERSION = 1;
 const PDF_TOKENS_PER_PAGE = 2500;
 
 /**
+ * Fork (realmi-lab/sprag-fork2, 2026-11): the most one Read of a file can put
+ * into context, the flat ~44,000 tokens measured for .fig below. A pptx, docx
+ * or xlsx baseline used to be its whole body XML (one deck counted 540,000
+ * tokens), which no reader could have spent: it does not fit a 200k window, and
+ * Read truncates long before that. By the reasoning this file already applies
+ * to .fig, the markup baseline is capped here.
+ */
+const READ_CAP_TOKENS = 44_000;
+
+/**
  * How each format's alternative is priced. `perPage` values an attached
  * page-image document; `markup` values the body XML a reader would have had
  * to wade through instead.
@@ -129,7 +139,7 @@ function estimateSaving({ ext, pages = 0, markupBytes = 0, markdown = '' }) {
   } else if (rule.perPage && pages > 0) {
     baseline = pages * rule.perPage;
   } else if (rule.markup && markupBytes > 0) {
-    baseline = Math.ceil(markupBytes / 4);
+    baseline = Math.min(Math.ceil(markupBytes / 4), READ_CAP_TOKENS);
   } else {
     baseline = Math.round(tokens * (rule.ratio || 1));
   }
@@ -222,6 +232,7 @@ function doc2mdSavedTotals(userDataDir, now = Date.now()) {
 module.exports = {
   LEDGER_VERSION,
   PDF_TOKENS_PER_PAGE,
+  READ_CAP_TOKENS,
   ATTACHMENT_BASELINE,
   INPUT_USD_PER_TOKEN,
   estimateTokens,

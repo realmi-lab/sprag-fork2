@@ -26,3 +26,11 @@ way that states or implies endorsement of a fork or a derived distribution, or
 as the name of a fork, a modified build or a hosted service. The permitted uses
 are listed in TRADEMARK.md at the root of the repository
 (https://github.com/rootstudioyaml/sprag/blob/main/TRADEMARK.md).
+
+----------------------------------------------------------------------
+
+This repository (realmi-lab/sprag-fork2) is a modified fork of the work
+above, based on upstream v3.109.0 (commit 381613e). The modified files
+carry a "Modified in realmi-lab/sprag-fork2" note, and FORK_CHANGES.md
+lists every change. This fork is not affiliated with or endorsed by the
+sprag project.

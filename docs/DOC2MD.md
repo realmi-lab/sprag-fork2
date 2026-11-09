@@ -69,6 +69,8 @@ An attached PDF is read whole, but every page costs 2,500–2,900 tokens against
 
 A single 30MB deck is 540,000 tokens as XML, which does not fit in a 200k context window. This baseline is measured per file from the real XML size, not applied as a per-format ratio. `.xls` is not a zip container and has no markup to measure, so it claims nothing.
 
+**In this fork (realmi-lab/sprag-fork2) the XML baseline is capped at 44,000 tokens**, the most one Read puts into context (the same flat figure measured for `.fig` below). A baseline no reader could spend is not a saving, so the deck above is credited 44,000 − 22,610 tokens rather than 540,429 − 22,610. The table keeps the raw XML sizes for reference.
+
 If client behaviour changes, re-measure the attachment side with `scripts/doc2md-baseline.mjs` and swap only the values in the `ATTACHMENT_BASELINE` table in `src/doc2md-ledger.cjs`.
 
 ### Figma `.fig` converts too

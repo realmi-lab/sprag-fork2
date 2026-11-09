@@ -55,7 +55,9 @@ test('priceLedgerEvent v2: zero-cost sub model gives the plain difference', () =
   assert.equal(ledger.priceLedgerEvent({ ...e, q: { ...e.q, at: OCT10 } }).cost, 1);
 });
 
-test('priceLedgerEvent v3 equals what runSavingDetail computed for the same run', () => {
+// Modified in realmi-lab/sprag-fork2 (2026-11): runSavingDetail prices on the
+// v4 basis, so the reference call passes the same three inputs.
+test('priceLedgerEvent v4 equals what runSavingDetail computed for the same run', () => {
   const calls = [{ ctx: 20000, newIn: 20000, out: 100 }, { ctx: 21000, newIn: 900, out: 200 }];
   const run = {
     model: 'claude-haiku-5-5', calls: 2, input: 0, out: 300, cacheCreation: 20900, cacheRead: 0,
@@ -63,7 +65,7 @@ test('priceLedgerEvent v3 equals what runSavingDetail computed for the same run'
   };
   const info = { C: 100000, N: 10, P: 500, resultChars: 4001, async: false };
   const d = runSavingDetail(run, 'claude-opus-5-5', info, { env: {} });
-  assert.equal(d.basis, 'v3');
+  assert.equal(d.basis, 'v4');
   const e = {
     priceSource: 'list', from: 'claude-opus-5-5', to: run.model,
     q: { at: runTime(run), sub: runTotals(run), main: d.main },
@@ -74,9 +76,10 @@ test('priceLedgerEvent v3 equals what runSavingDetail computed for the same run'
   // and from the plain functions at the same time
   const rates = unitRates('claude-opus-5-5', { env: {}, at: OCT1 });
   const sub = exactCost(runTotals(run), run.model, { env: {}, at: OCT1 });
-  const ref = netSavingV3({ calls, mainCtx: 100000, followUps: 10, promptTokens: 500, resultTokens: 4001 / 4, rates, subActual: sub });
+  const v4 = { skipFirstWrite: true, mainCalls: 2, delegationCalls: 2 };
+  const ref = netSavingV3({ calls, mainCtx: 100000, followUps: 10, promptTokens: 500, resultTokens: 4001 / 4, rates, subActual: sub, ...v4 });
   near(d.usd, ref.usd);
-  assert.deepEqual(d.main, netSavingQuantities({ calls, mainCtx: 100000, followUps: 10, promptTokens: 500, resultTokens: 4001 / 4 }));
+  assert.deepEqual(d.main, netSavingQuantities({ calls, mainCtx: 100000, followUps: 10, promptTokens: 500, resultTokens: 4001 / 4, ...v4 }));
 });
 
 test('priceLedgerEvent is null when the event cannot be priced from quantities', () => {

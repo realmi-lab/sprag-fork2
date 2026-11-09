@@ -34,7 +34,7 @@ LiteLLM 프록시로 Bedrock 등을 쓰면 Claude Code stdin 에 `rate_limits` �
 
 claude.ai 로 로그인한 Enterprise 사용자도 상태줄 입력에서 `rate_limits` 를 받지 못합니다. 이제 상태줄이 `GET https://api.anthropic.com/api/oauth/usage` 응답의 `extra_usage` 로 cap 게이지가 놓이던 지점에 `💳 budget ▰▱ 54% $271/$500` 게이지를 그립니다.
 
-- 기본으로 켜져 있습니다. 끄려면 `sprag mode no-oauth-budget` 을 쓰거나 환경변수 `SPRAG_OAUTH_BUDGET=0` 을 둡니다. 다시 켤 때는 `sprag mode oauth-budget` 을 씁니다.
+- 이 포크(realmi-lab/sprag-fork2)에서는 기본으로 꺼져 있습니다. 켜면 Claude Code 의 OAuth 토큰을 키체인에서 읽기 때문입니다. 켜려면 `sprag mode oauth-budget` 을 쓰거나 `SPRAG_OAUTH_BUDGET=1` 을 둡니다. 다시 끌 때는 `sprag mode no-oauth-budget` 이나 `SPRAG_OAUTH_BUDGET=0` 을 씁니다.
 - 해당하지 않는 사용자에게는 아무 일도 하지 않습니다. 게이트웨이나 `ANTHROPIC_API_KEY`, `ANTHROPIC_AUTH_TOKEN` 을 쓰거나 Bedrock, Vertex, Foundry 를 쓰면 토큰을 읽기 전에 건너뜁니다. 저장된 자격 증명의 `subscriptionType` 이 Pro 나 Max 면 요청을 보내지 않고 24시간 쉽니다. 이 요금제는 `rate_limits` 를 받기 때문입니다.
 - 출처 우선순위는 ① 상태줄 입력의 `rate_limits` ② LiteLLM 예산 ③ `/api/oauth/usage` 순입니다. 앞선 출처가 창을 주면 이 경로는 아예 돌지 않습니다.
 - 이 엔드포인트는 공식 문서에 없습니다. 응답 형태가 다르면(`extra_usage` 가 없거나 꺼져 있거나 통화가 USD 가 아니면) 아무것도 그리지 않습니다.

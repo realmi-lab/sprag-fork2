@@ -23,7 +23,8 @@ export async function run({ hasFlag }) {
     return;
   }
   if (!oauthBudgetEnabled()) {
-    console.log('꺼져 있습니다. `sprag mode oauth-budget` 으로 다시 켜십시오 (SPRAG_OAUTH_BUDGET=0 이면 그 변수를 지우십시오).');
+    // Fork (realmi-lab/sprag-fork2): off by default, so this is the usual state.
+    console.log('꺼져 있습니다(기본값). 켜면 Claude Code 의 OAuth 토큰을 키체인에서 읽어 예산을 조회합니다. `sprag mode oauth-budget` 으로 켜십시오 (SPRAG_OAUTH_BUDGET=0 이면 그 변수를 지우십시오).');
     return;
   }
   const state = readOauthState();

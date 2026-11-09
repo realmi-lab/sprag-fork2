@@ -446,7 +446,8 @@ export async function run({ hasFlag }) {
         // and `sprag harness rm` removes any one afterwards.
         let n = 0;
         for (const p of pending) {
-          try { if (await acceptSeed(p.id, { scope: 'global' })) n += 1; } catch (e) { debug('install:seed-accept', e); }
+          // Fork (realmi-lab/sprag-fork2): registered without asking, so not marked as user-approved.
+          try { if (await acceptSeed(p.id, { scope: 'global', confirmed: false })) n += 1; } catch (e) { debug('install:seed-accept', e); }
         }
         console.log('');
         console.log(lang === 'ko'
@@ -521,7 +522,7 @@ export async function run({ hasFlag }) {
             const { pendingSeeds, acceptSeed } = await import('../seed-rules.js');
             let n = 0;
             for (const p of pendingSeeds({ agent: 'codex' })) {
-              try { if (await acceptSeed(p.id, { scope: 'global', agent: 'codex' })) n += 1; } catch (e) { debug('install:codex-seed', e); }
+              try { if (await acceptSeed(p.id, { scope: 'global', agent: 'codex', confirmed: false })) n += 1; } catch (e) { debug('install:codex-seed', e); }
             }
             if (n) console.log(lang === 'ko' ? `  codex: 추천 룰 ${n}건 등록` : `  codex: registered ${n} recommended rule(s)`);
           }
