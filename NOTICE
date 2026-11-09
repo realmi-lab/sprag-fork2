@@ -7,5 +7,8 @@ This repository started as a fork of rootstudioyaml/sprag. This branch
 contains none of sprag's code: only a Claude Code subagent definition, its
 install scripts and documentation written for this repository. The earlier
 modified sprag code is kept on the branches review-fixes-2026-11 and
-upstream-3.109.0. This project is not affiliated with or endorsed by the
-sprag project.
+upstream-3.109.0.
+
+This project was inspired by sprag (https://github.com/rootstudioyaml/sprag):
+the idea of handing long reads to a cheaper subagent comes from sprag, rebuilt
+here as a single agent file.

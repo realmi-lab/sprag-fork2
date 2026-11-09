@@ -96,7 +96,7 @@ sprag에는 이 저장소에 없는 기능도 있습니다.
 
 이 문제들을 고친 sprag 수정본은 [`review-fixes-2026-11` 브랜치](https://github.com/realmi-lab/sprag-fork2/tree/review-fixes-2026-11)와 [PR #1](https://github.com/realmi-lab/sprag-fork2/pull/1)에 있습니다.
 
-이 프로젝트는 sprag 프로젝트와 관계가 없고, sprag 프로젝트가 보증하지도 않습니다.
+이 프로젝트는 [sprag](https://github.com/rootstudioyaml/sprag)에서 착안했습니다. "긴 읽기를 싼 하위 에이전트에 넘긴다"는 아이디어를 sprag에서 얻어, 에이전트 파일 하나로 다시 만든 것입니다.
 
 ## 라이선스
 
