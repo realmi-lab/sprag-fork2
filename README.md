@@ -1,427 +1,106 @@
-> **Unofficial fork.** This is [realmi-lab/sprag-fork2](https://github.com/realmi-lab/sprag-fork2), a modified fork of [rootstudioyaml/sprag](https://github.com/rootstudioyaml/sprag) based on v3.109.0. It is not maintained or endorsed by the sprag project; report problems with this fork here, not upstream.
-> What changed and why: [FORK_CHANGES.md](FORK_CHANGES.md). The review and measurements behind it (Korean): [docs/REVIEW-2026-11.ko.md](docs/REVIEW-2026-11.ko.md).
-> The figures further down are upstream's own measurements, made with the savings ledger (v3) and the uncapped document baseline that this fork corrects.
+# long-reader
 
-<div align="center">
+**Claude Code에서 긴 읽기를 Haiku에 맡기는 서브에이전트 하나.**
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/rootstudioyaml/sprag/main/site/assets/logo/sprag-lockup.svg">
-  <img alt="Sprag" src="https://raw.githubusercontent.com/rootstudioyaml/sprag/main/site/assets/logo/sprag-lockup-light.svg" width="220">
-</picture>
+*A single read-only Claude Code subagent that hands long reads to Haiku and brings back only the summary. Install it and Opus delegates on its own.*
 
-**The delegation layer for Claude Code and Codex. Each task goes to the model and effort that fits it: down to Haiku for a lookup, up to higher effort or a stronger model when a cheaper run would miss. Every rule is backed by replayed cases you can open.**
+여러 파일을 통째로 읽기, 저장소 전체에서 찾기, 긴 로그 훑기는 Opus가 직접 하면 읽은 내용이 대화에 그대로 쌓입니다. 이후 대화할 때마다 그 내용을 다시 읽느라 비용이 듭니다. 이 에이전트를 깔아 두면 Opus가 그런 일을 싼 Haiku에 넘기고, 돌아온 요약만 대화에 남깁니다.
 
-[![npm](https://img.shields.io/npm/v/sprag-cli.svg?label=sprag-cli)](https://www.npmjs.com/package/sprag-cli)
-[![downloads](https://img.shields.io/npm/dm/sprag-cli.svg)](https://www.npmjs.com/package/sprag-cli)
-[![test](https://github.com/rootstudioyaml/sprag/actions/workflows/test.yml/badge.svg)](https://github.com/rootstudioyaml/sprag/actions/workflows/test.yml)
-![node](https://img.shields.io/badge/node-%3E%3D20-brightgreen)
-[![license](https://img.shields.io/badge/license-Apache_2.0-blue.svg)](https://github.com/rootstudioyaml/sprag/blob/main/LICENSE)
+설치하는 것은 에이전트 정의 파일 하나(`agents/long-reader.md`)뿐입니다. 훅, 상태줄, 상시 실행되는 프로그램은 없습니다.
 
-[English](https://github.com/rootstudioyaml/sprag/blob/main/README.md) · [한국어](https://github.com/rootstudioyaml/sprag/blob/main/README.ko.md)
+## 실측
 
-[sprag.io](https://sprag.io) · [Benchmark](https://github.com/rootstudioyaml/sprag/blob/main/docs/BENCHMARK.md) · [Proof](https://sprag.io/proof/)
+같은 요청("lib/commands에서 a~e로 시작하는 파일 20개를 읽고 한 줄씩 정리해줘")을 새 세션에서 Opus 5.5로 실행했습니다. 대상은 npm `lib` 사본입니다.
 
-<a href="https://github.com/rootstudioyaml/sprag#teams"><img src="https://raw.githubusercontent.com/rootstudioyaml/sprag/main/docs/plan-pro-en.gif" width="640" alt="A virtual office where every teammate sits as an animal character, then the organization dashboard with spend, savings, seats and a 30-day chart, then team rules approved once and picked up by every machine."></a>
+| 설정 | 비용 | 걸린 시간 | 20개 모두 정리 |
+|---|---|---|---|
+| 에이전트 없음 | $0.516 | 44초 | ✓ |
+| **에이전트만 설치** | **$0.150 (−71%)** | 73초 | ✓ |
+| 에이전트 + CLAUDE.md 지침 한 줄 | $0.139 (−73%) | 57초 | ✓ |
 
-**Sprag Pro and Enterprise · for teams**: one set of delegation rules for the whole team. Approve a rule once and every machine follows it.<br>
-<sub>Spend, savings and seats on one screen, budget gauges and prompt monitoring on Enterprise, and a virtual office with a character for every teammate. <a href="https://github.com/rootstudioyaml/sprag#teams">See the team features</a> · <a href="mailto:support@sprag.io">support@sprag.io</a></sub>
+- **요청에 에이전트 이름을 적지 않아도 됩니다.** 두 경우 모두 Opus가 알아서 넘겼습니다.
+- **긴 세션일수록 더 아낍니다.** 컨텍스트가 약 27만 토큰인 세션에서 잰 결과입니다.
+  - 파일 20개 읽기: 62~77%
+  - 작은 grep 조회: 32~35%. Opus가 호출을 한 번 더 써서 생긴 차이이고, 보통은 본전에 가깝습니다.
+- **대신 조금 느려집니다.** 하위 에이전트가 따로 시작하기 때문입니다.
+- **수치의 한계:** 조건마다 한 번씩만 잰 값이고, Claude Code가 계산한 정가 환산입니다. 구독 요금제에서는 돈이 아니라 사용 한도가 덜 줄어듭니다.
 
-<a href="https://sprag.io/assets/video/sprag-compare-en.mp4"><img src="https://raw.githubusercontent.com/rootstudioyaml/sprag/main/docs/sprag-compare-en.gif" width="760" alt="Two terminals receive the same twelve requests. With Sprag, lookups and test runs go to cheaper models and documents go in as Markdown; the day ends at $1.83 against $6.68 without Sprag."></a>
+측정 방법과 전체 숫자는 [docs/REVIEW-2026-11.ko.md](docs/REVIEW-2026-11.ko.md)에 있습니다.
 
-Same 12 requests, two terminals: **$6.68 → $1.83 (−72.6%)** with Sprag.<br>
-<sub>Example requests priced at public list rates. <a href="https://sprag.io/assets/video/sprag-compare-en.mp4">Full video (41s)</a></sub>
-
-<img src="https://raw.githubusercontent.com/rootstudioyaml/sprag/main/docs/sprag-limits-en.png" width="760" alt="The fuller your 5-hour, 7-day or LiteLLM limit gets, the more Sprag delegates: as usual below 70%, when in doubt from 70%, multi-step work too from 90%. Design, security and deploys always stay on the main model.">
-
-<img src="https://raw.githubusercontent.com/rootstudioyaml/sprag/main/docs/sprag-savings-en.png" width="760" alt="How savings are counted: what the main model would have paid to do the delegated work, minus what it actually cost, shown as a formula with the measured amounts. Over the last 14 days (Oct 17 to Oct 31, 2026, one dev machine, 83 delegations) the total saving was $216.38, with no delegation counted as a loss.">
-
-</div>
-
----
-
-**Sprag sends each piece of work to the cheapest model and effort that does not
-get it wrong.** Claude Code and Codex cannot switch models per prompt, so Sprag
-does it the one way that works: rules in the main session hand work to
-sub-agents pinned to a model and an effort. Lookups, status checks, build and
-test runs go down to Haiku. Work that a cheaper run misses without saying so
-goes up instead: a lookup spread over many files runs on Sonnet at high effort,
-and open web research at xhigh, because replays showed the default medium
-effort missing both. The rules come from your own session logs, you approve
-each one, and every delegated run writes its price difference to a ledger.
-`npm i -g sprag-cli` sets it all up; nothing to configure per project.
-
-Every rule is checked against replays you can open.
-[sprag.io/proof](https://sprag.io/proof/) re-runs real delegations under
-several model and effort settings and grades them blind, and the set grows as
-new cases are analysed. The same table ships with the npm package: run
-`sprag proof`.
-
-Two more things ride along. Documents reach the context as compact Markdown (a
-540k-token deck becomes 23k tokens), and the statusline shows what each session
-spent and saved, with a warning chip in front when the cache, the context or a
-rate limit needs attention.
-
-The name is the sprag clutch: forward motion passes, backspin locks. Repeated
-failures in your logs become rules loaded at session start, so the agent keeps
-working and only the regressions get caught.
-
-Session analysis runs locally on the logs Claude Code and Codex already write.
-No extra model calls or API key are needed for analysis. Optional Codex gateway
-budget and price lookups contact your configured LiteLLM endpoint using its
-existing credentials. The CLI requires Node.js 20+ and one TOML parser dependency.
-
-The free CLI sends nothing that identifies you and needs no account. Pro uploads daily figures only from computers that joined a team, and Enterprise adds masked prompt capture only for teams an admin switched on. [What Sprag sends](docs/DATA.md) lists every item by plan, with the source file behind it.
+## 설치
 
 ```bash
-npm i -g sprag-cli   # Claude Code, plus Codex when it is installed
+git clone https://github.com/realmi-lab/sprag-fork2
 ```
-
-If your package manager skips install scripts (pnpm, bun), run `sprag install` once after installing. The old `claude-token-saver` package stopped updating at 3.55.0, so move to `sprag-cli`.
-
-## After you install
-
-1. Run `npm i -g sprag-cli`. Hooks, the statusline and the starter rules are set
-   up for every project; there is nothing to configure per project. If you
-   already have a statusline, the install asks whether to show both, replace
-   yours, or keep yours.
-2. Open Claude Code in any project and work as usual.
-3. Watch the statusline. It shows what the session spent and saved, and a
-   warning chip leads the line when the cache, the context or a rate limit
-   needs attention:
-
-```
-🔀 Routing saved $188  |  opus→sonnet ×67 $93.4 · fable→sonnet ×26 $83.7 · opus→haiku ×25 $7.41 · fable→haiku ×6 $3.73
-🧠 Cache hit 98.8% · ⏳ Cache expires 59:46 · 📦 Ctx 47% of 1M
-```
-
-![statusline example: routing savings and the share of spend by model on row 1, document conversion savings on row 2, diagnostics on row 3](https://raw.githubusercontent.com/rootstudioyaml/sprag/main/docs/statusline.png)
-
-Sprag never swaps the model you picked. Analysis reads your local session
-logs only, with no extra model calls and no API key. `sprag uninstall` removes
-everything it added and restores a statusline it merged with.
-
-Using Codex? See [Codex](#codex) below.
-
-## How it works
-
-<picture>
-  <source srcset="https://raw.githubusercontent.com/rootstudioyaml/sprag/main/docs/how-it-works.svg" type="image/svg+xml">
-  <img src="https://raw.githubusercontent.com/rootstudioyaml/sprag/main/docs/how-it-works.png" alt="What goes in: your past sessions, the task you just asked for, a document you would attach, Korean prose being written, and the tokens this turn is spending. What sprag does with it: writes a ratchet rule loaded every session, converts the document, checks the Korean as you write, prints the cost in your prompt, and routes a matched task to a haiku or sonnet sub-agent whose output the main agent reviews.">
-</picture>
-
-Everything on the left is something your session already produces. Nothing is
-sent anywhere to read it. The tier decision at the bottom is the whole routing
-argument in three tests: where the answer lives, whether a mistake surfaces, and
-what error rate the rule was measured at.
-
-Sprag does not swap the model you asked for. It reads what you have already run,
-finds the kinds of task that never went wrong on a cheaper tier, and spawns a
-sub-agent for exactly those. The main agent reviews what comes back before
-anything counts as done, and the work returns to it the moment a rule stops
-holding.
-
-## Measured results
-
-| Metric | Result | | Evidence |
-|---|---|---|---|
-| Public benchmark accuracy | **59.1%** vs 57.9% best single model | `▰▰▰▰▰▰▰▰▰▰▰▰` | [benchmark](https://github.com/rootstudioyaml/sprag/blob/main/docs/BENCHMARK.md) |
-| Cost for the same queries | **$268** vs gpt-5 $388, gemini-2.5-pro $734 | `▰▰▰▰▰▱▱▱▱▱▱▱` | [benchmark](https://github.com/rootstudioyaml/sprag/blob/main/docs/BENCHMARK.md) |
-| Tokens for the same documents | **−95.9%**, 2,011,178 → 82,209 over 12 files | `▰▱▱▱▱▱▱▱▱▱▱▱` | [doc2md](https://github.com/rootstudioyaml/sprag/blob/main/docs/DOC2MD.md) |
-| Delegation savings, from the ledger | **$188.27** over 124 delegated runs | `▰▰▰▰▰▰▰▰▰▰▰▱` | `sprag route-scan savings` |
-| Cheap tier on the same prompts | **24% of the cost**, one answer worse out of eight | `▰▰▰▱▱▱▱▱▱▱▱▱` | [A/B run](#the-cheap-tier-on-the-same-prompts) |
-
-The first two rows answer the objection that comes up first: that moving work to
-a cheaper model has to cost you accuracy. It did not. The same criteria, wired up
-as a router, scored 1.2 points above the best single model at a third of the
-cost. Nothing is best at everything, which is why choosing per task beats
-choosing once.
-
-Measured offline on LLMRouterBench (Findings of ACL 2026): 11,696 instances, 13
-models whose answers, scores and costs ship with the dataset. No model was
-called and nothing was spent. The router chose; the numbers were looked up. Run
-it again and you get the same figures. It validates the criteria, not sprag's own
-routing: the dataset has no Claude models, so deepseek-v3, qwen3-235b and gpt-5
-stood in for cheap, mid and flagship.
-
-The last three rows are ledgers on this machine. They grow as it runs. The
-routing figures were read on 2026-10-09, the document figures on 2026-09-18.
-Model names are the ones each run actually used.
-
-### Current, on one machine, last 30 days
-
-```
-🔀 Routing saved $188.27 total        (last 7d $13.31 · last 30d $150.64)
-
-   fable-5 → sonnet-5      24 runs    $81.19   ▰▰▰▰▰▰▰▰▰▰▰▰
-   opus-5  → sonnet-5      54 runs    $68.85   ▰▰▰▰▰▰▰▰▰▰▱▱
-   opus-5  → sonnet-5.5    13 runs    $24.58   ▰▰▰▰▱▱▱▱▱▱▱▱
-   opus-5  → haiku-4.5     25 runs     $7.41   ▰▱▱▱▱▱▱▱▱▱▱▱
-   fable-5 → haiku-4.5      5 runs     $3.22   ▰▱▱▱▱▱▱▱▱▱▱▱
-   fable-5 → sonnet-5.5     2 runs     $2.51   ▰▱▱▱▱▱▱▱▱▱▱▱
-   fable-5 → haiku-5.5      1 run      $0.51   ▰▱▱▱▱▱▱▱▱▱▱▱
-```
-
-| Also measured | Over 30 days | |
-|---|---|---|
-| Documents converted | 12 files, 2,011,178 → 82,209 tokens | `▰▱▱▱▱▱▱▱▱▱▱▱` |
-| Cache hit rate | 92.2% | `▰▰▰▰▰▰▰▰▰▰▰▱` |
-| Volume behind both | 175 sessions · 14,682 API calls · 3.81B input tokens | |
-
-Real output, from `sprag route-scan savings`, `sprag --days 30`, and the doc2md
-ledger. Nothing here is a projection.
-
-Every delegated run records its own price difference, so `sprag route-scan savings` traces any amount back to the rule that caused it. What the ledger deliberately leaves out is written down in [the command reference](https://github.com/rootstudioyaml/sprag/blob/main/docs/COMMANDS.md).
-
-<!-- sprag:evidence:start -->
-### Replayed delegations
-
-10 real delegations were replayed across 3 rounds in 71 runs, the latest on 2026-11-07.
-
-| Case | Recommended setup | Verdict | Cost vs Opus |
-| --- | --- | --- | --- |
-| Review model-name parsing | Sonnet · high | Relayable | 59.3% cheaper |
-| Map the preset system | Sonnet · high | Relayable | 60.9% cheaper |
-| Implement a price table update | Sonnet · high | Partial | 66.2% cheaper |
-| Find the upload intervals | Haiku · low | Partial | 98.2% cheaper |
-| Run the full test suite | Haiku · low | Relayable | 97.9% cheaper |
-| Locate functions in the codebase | Sonnet · high | Relayable | 67.9% cheaper |
-| Check that the demo shows the town | Haiku · low | Relayable | 98.0% cheaper |
-| Check GeekNews posting rules | Haiku · low | Relayable | 97.8% cheaper |
-
-Every run is on [sprag.io/proof](https://sprag.io/proof/), and the full table is in [evals/SUMMARY.md](https://github.com/rootstudioyaml/sprag/blob/main/evals/SUMMARY.md).
-<!-- sprag:evidence:end -->
-
-## Research behind the tier rules
-
-The tier criteria are not a hunch. Each one traces back to published routing
-research, and the percentages quoted in the rules (28% vs 54% recall, a +63pp
-gap on chained tool work) are sprag's own offline measurement on the datasets
-below.
-
-| Criterion | What the paper found | Paper |
-|---|---|---|
-| Delegate down, conservatively | As budgets grow, learned routers default to the most expensive model even when a cheaper one already suffices. | Lai & Ye, [When Routing Collapses: On the Degenerate Convergence of LLM Routers](https://arxiv.org/abs/2602.03478) (2026) |
-| Judge difficulty by outcome | Every router on the board falls short of the oracle, mainly because it cannot tell when a smaller model is enough. Query difficulty is defined by how many of 42 models actually answered it. | Lu et al., [RouterArena: An Open Platform for Comprehensive Comparison of LLM Routers](https://arxiv.org/abs/2510.00202) (2025) |
-| Thresholds from your own logs | Routing compares a predicted win rate against a cost threshold, and results are read by the share of calls sent to the strong model. sprag sets that threshold from your last 14 days at every scan. | Ong et al., [RouteLLM: Learning to Route LLMs with Preference Data](https://arxiv.org/abs/2406.18665) (2024) |
-| Escalate on failure | A cascade tries the cheap model first and lets a check on the answer decide whether to go up. It matched GPT-4 with up to 98% lower cost. | Chen, Zaharia & Zou, [FrugalGPT](https://arxiv.org/abs/2305.05176) (2023) |
-| Where the answer lives | Short-form factual recall measured on its own. The 28% vs 54% recall gap comes from this class of set. | Wei et al., [Measuring short-form factuality in large language models (SimpleQA)](https://arxiv.org/abs/2411.04368) (2024) |
-| Tool orchestration stays up | Agents must coordinate tool calls with a user in a shared environment. The +63pp gap was measured here. | Barres et al., [τ²-Bench](https://arxiv.org/abs/2506.07982) (2025) |
-| The public benchmark run | 400K instances, 21 datasets, 33 models. Several routers, commercial ones included, fail to beat a simple baseline. | Li et al., [LLMRouterBench](https://arxiv.org/abs/2601.07206) (Findings of ACL 2026) |
-| Routing vs cascading | A taxonomy of when a routing decision is made, what it reads, and how it is computed. | Moslem & Kelleher, [Dynamic Model Routing and Cascading for Efficient LLM Inference: A Survey](https://arxiv.org/abs/2603.04445) (2026) |
-
-Two criteria have no paper behind them. Batching tasks that read the same files
-and splitting design from code writing come from sprag's own cost accounting:
-on a sub-agent, loading context costs more than generating. The full reasoning,
-in Korean, is in [Tier criteria](https://github.com/rootstudioyaml/sprag/blob/main/docs/TIER_CRITERIA.md).
-
-## Everything ships in one install, working from day one
-
-| | What it does | More |
-|---|---|---|
-| ⚙️ **Ratchet rules** | Repeated failures become one-line rules loaded every session. Candidates are detected from your logs, and you choose project or global scope. | [harness](https://github.com/rootstudioyaml/sprag/blob/main/docs/HARNESS.md) |
-| 🔀 **Model fitting** | Log-driven delegation rules carrying the error rate they were measured at and the savings they reported, written to `ratchet-model.md`. | [route-scan](https://github.com/rootstudioyaml/sprag/blob/main/docs/ROUTE_SCAN.md) |
-| 🅷 **Harness score** | Five operating principles checked live. Skip the verify step and `🅷 4/5` says so before you report done. | [harness](https://github.com/rootstudioyaml/sprag/blob/main/docs/HARNESS.md) |
-| 📊 **Token telemetry** | Cache hit rate, TTL, context size, output spikes and both rate-limit windows, in the prompt every turn. | [statusline](https://github.com/rootstudioyaml/sprag/blob/main/docs/STATUSLINE.md) |
-| 📄 **doc2md** | pptx, xlsx, pdf, docx and fig converted on demand, so a document costs one read instead of your whole context. | [doc2md](https://github.com/rootstudioyaml/sprag/blob/main/docs/DOC2MD.md) |
-| 🇰🇷 **Style gates** | Write-time prose lint enforced by hook. Shipping today for Korean: commas after connective endings, middle-dot lists, translationese, each rule backed by a cited study or a measurement. | [style](https://github.com/rootstudioyaml/sprag/blob/main/docs/KOREAN-STYLE.md) |
-
-The two savings figures are never added together. They measure different things:
-the routing ledger records the price difference on delegated runs, and the
-conversion ledger records tokens a document did not cost.
-
-Neither one counts what the harness and the ratchet rules save. That saving
-arrives as fewer round-trips rather than as cheaper ones.
-
-## The statusline in one line
-
-```
-🔀 Routing saved $188  |  opus→sonnet ×67 $93.4 · fable→sonnet ×26 $83.7 · opus→haiku ×25 $7.41 · fable→haiku ×6 $3.73
-🚨 5H ▰▰▰▰▰▰▰▰▰▰▰▱ 94% 🔄 12:36 · 🤖 Opus 5.5 · 🧠 Cache hit 98.8% · ⏳ Cache expires 59:46 · 📅 weekly ▰▰▰▰▰▱▱▱▱▱▱▱ 38% · 💵 Sep $42 · 📦 Ctx 47% of 1M
-```
-
-When something is wrong the warning chip leads the line: `🚨 5H/7D NN%`, `⚠ Ctx 500k+`, `⚠ Cache miss`, `⚠ Input spike`, `⚠ Output heavy`, `⚠ Call surge`, `⚠ Rebuild churn`, `⚠ 5m TTL`. Paste the chip text into Claude and the Skill names the root-cause code and the fix. Every segment is explained in [the statusline reference](https://github.com/rootstudioyaml/sprag/blob/main/docs/STATUSLINE.md).
-
-Inside a JetBrains IDE terminal the chips render as single-cell glyphs instead of emoji (`◉ Cache hit 98.8% · ◧ Ctx 47% of 1M`). The IDE's default font has no emoji glyphs, so emoji leave characters from the previous frame on screen, like `Cache expires 4:545`. [Label modes](https://github.com/rootstudioyaml/sprag/blob/main/docs/STATUSLINE.md#label-modes) covers the detail, plus `sprag mode narrow` and `mode icon-force`.
-
-## The cheap tier on the same prompts
-
-The benchmark uses public data. This asks the same question of my own work: eight
-prompts from real sessions in this repository, sent to both tiers, graded against
-an answer written before the run (2026-09-17, raw data in
-`video/out/measure2.json`).
-
-| | flagship (opus-5) | cheap tier (haiku-4.5) |
-|---|---:|---:|
-| Cost for all eight | $2.5652 | **$0.6132** (23.9%) |
-| Graded correct | 7 / 8 | 6 / 8 |
-| Gave the same answer | | 6 / 8 |
-
-The prompt both tiers missed is the useful one. It asked which files reference
-`process.env` without saying whether subdirectories counted, and the two read it
-differently. Adding that one condition made their answers identical. The question
-was ambiguous, not hard.
-
-The remaining miss is the cheap tier leaving entries out of a file listing. A
-wrong listing is one you can see is wrong, which is the second criterion doing
-its job.
-
-So the cheap tier is not free. On this sample one lookup in eight comes back
-worse, for a quarter of the price. That is why rules only send work whose failure
-surfaces, and never send design or diagnosis.
-
-## What the method has produced here
-
-| Measured | Value | Sample | Window |
-|---|---|---|---|
-| Documents converted | 2,011,178 → 82,209 tokens | 12 files (xlsx, pptx, pdf) | to 2026-09-18 |
-| Delegated runs | $188.27 saved, $1.52 per run | 124 runs | to 2026-10-09 |
-| Ratchet rules accumulated | 37 (30 global, 7 per-project) | 4 repositories | 2026-05-08 to 09-16 |
-
-The two counts grow differently. Ratchet rules come from mistakes a person made,
-so they keep coming. Delegation rules stop: the criteria recognize a fixed set of
-work types, and once each has a rule there is nothing left to promote.
-
-## Codex
-
-Codex gets native hooks, an `AGENTS.md` harness, scoped ratchet rules, Korean lint, document conversion, token reports and a session-bound companion panel. `npm i -g sprag-cli` sets Codex up too when it is installed, with the starter rules registered globally and nothing asked (`sprag install --manual` asks at each step). For a Codex-only install that leaves Claude Code alone, run `npm i -g sprag-cli --ignore-scripts` and then `sprag install --agent codex`.
-
-Commands default to Claude Code; add `--agent codex` to pick Codex, for example `sprag --agent codex --days 7` or `sprag panel --agent codex`. Review and trust the new hooks in Codex's `/hooks` menu, because Codex requires that step. The dollar figures in this README come from Claude Code sessions, not from a Codex benchmark.
-
-The full command list, the Claude Code and Codex comparison, accounting limits and removal are in [Codex support and limits](https://sprag.io/docs/codex/) ([source](https://github.com/rootstudioyaml/sprag/blob/main/docs/CODEX.md)), or run `sprag capabilities --agent codex` for the support matrix.
-
-## Presets
-
-The ratchet presets, model-routing presets and delegation agents in `presets/` are also published centrally from the Sprag console. Once a day the CLI asks the Sprag server whether a newer version exists, a read-only request that carries nothing about you, and applies it only when its signature verifies against a key built into the CLI. Offline, blocked or unverified, it keeps the copy bundled with the package. A new version takes effect at the next session start, and presets you already accepted with `sprag seed` pick up reworded text on their own; new presets are still offered one at a time.
-
-`sprag presets status` shows which copy is in use and why, `sprag presets sync` checks now, `sprag presets show` prints the effective presets, and `SPRAG_NO_PRESET_SYNC=1` turns the fetch off. The request is listed in the network table of the [install guide](https://github.com/rootstudioyaml/sprag/blob/main/docs/INSTALL.md).
-
-## Day-to-day commands
-
-| Command | What it does |
-|---|---|
-| `sprag` | Last-30-day diagnostic report |
-| `sprag handoff` | Back work up to markdown before a cap blocks you |
-| `sprag route-scan` | Find delegation candidates in your own history (0 LLM calls) |
-| `sprag route-scan savings` | The routing-savings ledger |
-| `sprag routing on\|off` | Turn model delegation (rules, hints, candidates) on or off |
-| `sprag routing relax [off]` | Widen delegation until the busiest usage window resets (it switches back by itself), or end that early. `sprag routing status` shows `relax: off` or `relax: until HH:MM` |
-| `sprag secrets [fix]` | List approval-list entries in Claude Code settings files that hold secrets (values are never shown), or remove them after backing up the original. `sprag secrets off` silences the session start notice |
-| `sprag harness check` | Current 🅷 harness score |
-| `sprag doc2md <file>` | Convert one document to Markdown |
-
-Every subcommand, flag and the output-language setting: [command reference](https://github.com/rootstudioyaml/sprag/blob/main/docs/COMMANDS.md).
-
-## Documentation
-
-| Doc | Covers |
-|---|---|
-| [Codex](https://sprag.io/docs/codex/) | Installation, panel, native hooks, automatic candidates, presets, and accounting limits |
-| [Install](https://github.com/rootstudioyaml/sprag/blob/main/docs/INSTALL.md) | What the install turns on, what stays manual, how to turn each part off |
-| [What Sprag sends](https://sprag.io/docs/data/) ([한국어](https://sprag.io/docs/ko/data/)) | Every outbound item by plan (open source, Pro, Enterprise), who can see it, and how to turn it off |
-| [Statusline](https://github.com/rootstudioyaml/sprag/blob/main/docs/STATUSLINE.md) | Segments, warning chips, spike issue codes, update notifications |
-| [Commands](https://github.com/rootstudioyaml/sprag/blob/main/docs/COMMANDS.md) | Full CLI surface |
-| [Harness](https://github.com/rootstudioyaml/sprag/blob/main/docs/HARNESS.md) | The five principles, rule promotion, compact-window pinning, seed presets |
-| [route-scan](https://github.com/rootstudioyaml/sprag/blob/main/docs/ROUTE_SCAN.md) ([한국어](https://github.com/rootstudioyaml/sprag/blob/main/docs/ROUTE_SCAN.ko.md)) | Tier verdicts, rule-file mechanics, scan triggers, subagent setup |
-| [Tier criteria](https://github.com/rootstudioyaml/sprag/blob/main/docs/TIER_CRITERIA.md) | Why T0/T1/T2 split where they do, with sources (Korean) |
-| [Benchmark](https://github.com/rootstudioyaml/sprag/blob/main/docs/BENCHMARK.md) | The 11,696-instance LLMRouterBench run |
-| [doc2md](https://github.com/rootstudioyaml/sprag/blob/main/docs/DOC2MD.md) ([한국어](https://github.com/rootstudioyaml/sprag/blob/main/docs/DOC2MD.ko.md)) | Supported formats, savings evidence, editing documents, DRM cases |
-| [Korean style](https://github.com/rootstudioyaml/sprag/blob/main/docs/KOREAN-STYLE.md) | Design, the write-time check, before/after, references |
-| [Not a router](https://github.com/rootstudioyaml/sprag/blob/main/docs/NOT-A-ROUTER.md) | Why realtime routing breaks the cache and costs more |
-| [Gateways & environment](https://github.com/rootstudioyaml/sprag/blob/main/docs/GATEWAYS.md) | Bedrock, Vertex, LiteLLM budgets, pricing table, FAQ, how it works |
-| [Reduce Claude Code tokens](https://sprag.io/docs/reduce-claude-code-tokens/) | Compact/clear timing, subagent exploration, document conversion, cache TTL |
-| [Claude Code usage limits](https://sprag.io/docs/claude-code-usage-limits/) | The 5-hour and 7-day windows, watching both, cutting per-turn cost |
-| [Codex token usage](https://sprag.io/docs/codex-token-usage/) | Session scoping, native subagent delegation, document conversion for Codex |
-| [Compare](https://sprag.io/docs/compare/) | Sprag vs ccusage, claude-usage, and statusline tools like CCometixLine |
-
-## Release notes
-
-Recent releases:
-
-- **v3.67.0**: Tool-restricted delegation agents keep subagent requests light behind a gateway (the first request drops from 46,618 to about 20,000 tokens on a LiteLLM proxy), ratchet rules reach the Claude app's Cowork tab, and the design/implementation split ships as a bundled preset.
-- **v3.66.0**: The Claude desktop app shows the sprag statusline, password-protected and DRM documents are refused with a clear notice, and model profiles are learned from the model a subagent actually ran on.
-- **v3.65.0**: The routing headline shows what delegation cost next to what it saved (`Routing saved $15.1 · spent $9.78 since 10/9`), and the session subagent chip shows what those runs spent.
-
-Every release is on [GitHub Releases](https://github.com/rootstudioyaml/sprag/releases), and the full history is in [CHANGELOG.md](https://github.com/rootstudioyaml/sprag/blob/main/CHANGELOG.md) (Korean; version headings and command names are language-neutral).
-
-## Feedback
-
-Bugs and feature requests go in the issue tracker: https://github.com/rootstudioyaml/sprag/issues
-
-With no browser or GitHub login at hand (corporate network, mid-session), submit straight from the terminal instead, or ask Claude to do it for you:
 
 ```bash
-sprag feedback "the 5m TTL chip never clears on Bedrock"
+cd sprag-fork2 && ./install.sh
 ```
 
-It files a GitHub issue through the `gh` CLI when one is authenticated. Otherwise it submits anonymously, with no login, which works where github.com is blocked. Pass `--anonymous` to skip the `gh` path. Version and OS metadata are attached automatically.
+새로 여는 Claude Code 세션부터 적용됩니다.
 
-For a bug, please include the tool version (`sprag --version`) and your OS. For a statusline or warning issue, add the statusline output or the `sprag last` result.
+| 명령 | 하는 일 |
+|---|---|
+| `./install.sh` | 모든 프로젝트에 설치 (`~/.claude/agents/long-reader.md`) |
+| `./install.sh --project DIR` | 그 프로젝트에만 설치 (`DIR/.claude/agents/`) |
+| `./install.sh --model sonnet` | Haiku 대신 Sonnet 사용 (아래 표 참고) |
+| `./install.sh --with-claude-md` | CLAUDE.md에 "긴 읽기는 long-reader에게" 지침도 추가 (선택) |
+| `./uninstall.sh [--project DIR]` | 설치한 에이전트와 지침을 지움 |
 
-## Teams
+같은 이름의 파일이 이미 있으면 `.bak`으로 남기고 바꿉니다.
 
-The CLI is free and works on its own on one machine. For organizations, **Sprag Pro** and **Sprag Enterprise** add a shared dashboard built from the same local session logs. To start, write to [support@sprag.io](mailto:support@sprag.io).
+**스크립트 없이 설치하려면** `agents/long-reader.md`를 `~/.claude/agents/`(모든 프로젝트) 또는 프로젝트의 `.claude/agents/`에 복사하면 됩니다. Windows도 같습니다.
 
-### Pro: team dashboard
+## Haiku냐 Sonnet이냐
 
-<a href="https://sprag.io/assets/video/plan-pro-en.mp4"><img src="https://raw.githubusercontent.com/rootstudioyaml/sprag/main/docs/plan-pro-en.gif" width="640" alt="A virtual office where every teammate sits as an animal character, then the organization dashboard with spend, savings, seats and a 30-day chart, then team rules approved once and picked up by every machine."></a>
+기본은 Haiku입니다. 긴 세션에서 잰 같은 작업을 모델 가격만 바꿔 다시 계산했습니다(이후 대화 효과 제외).
 
-- Organization dashboard with a 30-day chart
-- A virtual office with an animal for each person
-- Seat roster with each machine's status
-- Team-approved rules applied at session start
-- Rollout with `sprag team join`
-- Owner and admin roles, activity log
+| 하위 모델 | 파일 20개 읽기 | 작은 조회 |
+|---|---|---|
+| Haiku 5.5 | 62% 절감 | 32% 절감 |
+| Haiku 4.5 | 47% 절감 | 12% 절감 |
+| Sonnet 5.5 | 25% 절감 | 9% 손해 |
 
-### Enterprise: prompt monitoring
+Sonnet 5.5는 캐시를 다시 읽는 요금이 Opus 5.5와 같아서 덜 아낍니다. Haiku가 자주 빠뜨리는 일이 있을 때만 `--model sonnet`을 쓰십시오.
 
-<a href="https://sprag.io/assets/video/plan-ent-en.mp4"><img src="https://raw.githubusercontent.com/rootstudioyaml/sprag/main/docs/plan-ent-en.gif" width="640" alt="Per-user prompt usage with a 30-day trend, a prompt search for one person, and the team setting that turns prompt capture on."></a>
+## 잘 맞는 일과 안 맞는 일
 
-Everything in Pro, plus:
+| 맡기면 좋은 일 | 직접 하는 게 나은 일 |
+|---|---|
+| 파일 여러 개를 읽고 요약 | 명령 한두 번으로 끝나는 조회 (버전 확인 등) |
+| 저장소 전체에서 호출 위치·문자열 찾기 | 설계, 원인 진단, 코드 리뷰처럼 판단이 결론인 일 |
+| 긴 로그·테스트 출력에서 실패만 추리기 | 파일 수정 |
 
-- Prompt capture per team, with secrets redacted
-- Nothing from before the policy was turned on
-- Per-user prompt usage and a 30-day trend
-- Each user's prompt list with search
-- A capture policy every member can see
+에이전트 설명에 이 기준이 들어 있어서, Opus가 대부분 알아서 고릅니다. 실측에서도 짧은 일은 넘기지 않았습니다.
 
-Prompt capture is off unless an organization owner or admin turns it on.
+## 에이전트가 하는 일
 
-<sub>Both videos are recorded from the demo dashboard with sample data. Full videos: <a href="https://sprag.io/assets/video/plan-pro-en.mp4">Pro (30s)</a> · <a href="https://sprag.io/assets/video/plan-ent-en.mp4">Enterprise (30s)</a></sub>
+[`agents/long-reader.md`](agents/long-reader.md) 한 장에 다음 원칙이 적혀 있습니다.
+- **읽기만 합니다.** 쓰기 도구가 없습니다. Bash는 읽기 명령과, 결과를 확인하라고 받은 테스트·빌드 명령에만 씁니다.
+- **빠뜨리지 않습니다.** 대상 목록을 명령으로 먼저 확정합니다. 개수는 머리로 세지 않고 `wc`·`grep -c`로 셉니다. 실측에서 Haiku가 파일 이름을 추측하다 2개를 빠뜨리고, 합계를 틀리게 적은 일이 있어서 넣은 규칙입니다.
+- **보고 형식이 정해져 있습니다.** 범위(N개 중 N개), 결과(`파일:줄`), 못 본 것 순서로 보고합니다.
+- **비밀값을 다루지 않습니다.** `.env`와 자격 증명 파일은 열지 않습니다.
 
-### What a machine sends
+한계도 있습니다. 쓰기 도구는 없지만 Bash가 있으므로, "읽기 명령만 쓴다"는 에이전트 지침으로만 지켜집니다. 사용자 설정이 Bash를 전부 허용한다면 이 점을 알고 쓰십시오.
 
-Sprag stays local unless you opt in. With `sprag team join <token>` (or `SPRAG_TEAM_TOKEN` for a whole organization), each machine uploads one row per day: spend, savings, delegated-run count and model-family share. Transcripts, file paths and project names are never sent. Prompts are not sent either, unless an Enterprise organization turns on prompt capture, and `sprag team status --show-payload` prints exactly what would go up. In return the team owner sees per-member totals in a dashboard and can approve ratchet rules that every member picks up automatically.
+## sprag와의 관계
 
-`SPRAG_NO_TEAM_SYNC=1` turns all team traffic off, and `sprag team leave` removes the membership.
+이 저장소는 [rootstudioyaml/sprag](https://github.com/rootstudioyaml/sprag) 포크로 시작했습니다. 검토하고 실측해 보니, sprag가 비용을 아끼는 핵심은 "긴 읽기를 싼 하위 에이전트에 넘기기" 하나였습니다. 그리고 그 효과는 에이전트 파일 하나로 거의 그대로 얻을 수 있었습니다. 실측에서 sprag는 같은 대화에서 19%를 아꼈습니다.
 
-- [Team layer guide](docs/TEAM.md)
-- [What Sprag sends, by plan](docs/DATA.md)
-- Team console for owners and admins: https://sprag.io/team/
-- Plans: https://sprag.io/license/
+sprag에는 이 저장소에 없는 기능도 있습니다.
+- 캐시·컨텍스트·한도를 보여 주는 상태줄
+- 문서(pptx·xlsx·pdf·docx) 변환
+- 반복 실수를 룰로 남기는 기능
+- 팀 대시보드
+- Codex 지원
 
-## License
+이런 기능이 필요하면 sprag를 쓰십시오. 다만 리뷰에서 확인한 문제가 있습니다. 절감 장부를 실제보다 크게 기록하고, 자동 등록한 룰을 "사용자가 승인했다"고 모델에 알리며, 팀 룰에 서명이 없습니다.
 
-Apache License 2.0. The full text is in [LICENSE](https://github.com/rootstudioyaml/sprag/blob/main/LICENSE), and the attributions
-it requires are in [NOTICE](https://github.com/rootstudioyaml/sprag/blob/main/NOTICE).
+- 리뷰와 실측: [docs/REVIEW-2026-11.ko.md](docs/REVIEW-2026-11.ko.md)
+- 이 문제들을 고친 sprag 수정본: [`review-fixes-2026-11` 브랜치](https://github.com/realmi-lab/sprag-fork2/tree/review-fixes-2026-11)와 [PR #1](https://github.com/realmi-lab/sprag-fork2/pull/1)
 
-Releases up to and including v3.47.0 went out under the MIT License. A copy
-received under those terms stays under them; the new license applies to
-releases after that.
+이 프로젝트는 sprag 프로젝트와 관계가 없고, sprag 프로젝트가 보증하지도 않습니다.
 
-**Running sprag inside a product or a paid service?** The license already permits
-that, so this is not a request for permission. We would like to hear about it
-anyway, because the parts that get awkward at scale are the parts we would rather
-fix than have you work around: shared ratchet rules across a team, gateway setups
-where the model id is an opaque profile, and per-seat budget reporting. [Open an
-issue](https://github.com/rootstudioyaml/sprag/issues) or reach us through the
-channels below.
+## 라이선스
 
----
-
-## Who makes this
-
-[![DeepPulse YouTube](https://img.shields.io/badge/YouTube-@DeepPulseKR-FF0000?logo=youtube&logoColor=white)](https://www.youtube.com/@DeepPulseKR)
-[![DeepPulseEN YouTube](https://img.shields.io/badge/YouTube-@DeepPulseEN-FF0000?logo=youtube&logoColor=white)](https://www.youtube.com/@DeepPulseEN)
-[![Homepage](https://img.shields.io/badge/Homepage-sprag.io-2ea44f)](https://sprag.io)
-
-Built at **DeepPulse**, a channel about AI developer tooling, and used there every day. The [launch Short (60s)](https://www.youtube.com/shorts/RaD8qMsPTnA) covers where it came from and how it gets used.
+Apache License 2.0. [LICENSE](LICENSE)와 [NOTICE](NOTICE)를 보십시오.
