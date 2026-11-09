@@ -109,17 +109,23 @@ function run({ perCall, input = 0, out = 0, model = 'claude-haiku-5-5', finalCha
   };
 }
 
-test('runSavingDetail prices on v3 when the main session numbers exist', () => {
+// Modified in realmi-lab/sprag-fork2 (2026-11): runSavingDetail prices on the
+// v4 basis (see FORK_CHANGES.md).
+test('runSavingDetail prices on v4 when the main session numbers exist', () => {
   const r = run({ perCall: CALLS, input: 0, out: 300 });
   const info = { C: 100000, N: 10, P: 500, resultChars: 4000, async: false };
   const d = runSavingDetail(r, 'claude-opus-5-5', info, { env: {} });
-  assert.equal(d.basis, 'v3');
+  assert.equal(d.basis, 'v4');
   // main rates: read 0.2/M, write 5/M, output 20/M; sub (haiku 5.5): 20900 writes*0.125/M + 300*0.5/M
   const subActual = 20900 * 0.125e-6 + 300 * 0.5e-6;
-  const cfWork = (100000 + 101000) * 0.2e-6 + 20900 * 5e-6 + 300 * 20e-6;
+  // The subagent's first-call input (20000, its start-up) is not main-model
+  // work; two re-reads, which is both the subagent's count and the default K.
+  const cfWork = (100000 + 101000) * 0.2e-6 + 900 * 5e-6 + 300 * 20e-6;
   const cfCarry = 1300 * 10 * 0.2e-6;
-  const overhead = 500 * 20e-6 + 1000 * 5e-6 + 1000 * 10 * 0.2e-6;
+  // The two main calls around the delegation each re-read C.
+  const overhead = 500 * 20e-6 + 1000 * 5e-6 + 1000 * 10 * 0.2e-6 + 2 * 100000 * 0.2e-6;
   near(d.usd, cfWork + cfCarry - subActual - overhead, 1e-9);
+  assert.equal(d.rereadCalls, 2);
 });
 
 test('a background launch counts the report the run produced, not only the acknowledgement', () => {

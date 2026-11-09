@@ -386,6 +386,41 @@ export function isFailedRun(run) {
   return run.toolErrors / calls > DELEGATED_ERR_DENSITY;
 }
 
+// Fork (realmi-lab/sprag-fork2, 2026-11) — inputs of the v4 saving basis.
+// A delegation costs the main session two calls of its own: the one that
+// issues it and the one that reads the report back.
+export const DELEGATION_MAIN_CALLS = 2;
+// With no history for the category, the main model is assumed to need the
+// shortest inline path: one call that issues the tool calls (in parallel) and
+// one that reads the results. That errs low, which is the side a ledger should
+// err on.
+export const DEFAULT_MAIN_CALLS = 2;
+// Fewer main-handled episodes than this and their median is not used.
+export const MIN_MAIN_CALL_SAMPLES = 5;
+
+/** Median of a list of numbers, or null for an empty list. */
+export function median(values) {
+  if (!Array.isArray(values) || values.length === 0) return null;
+  const s = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(s.length / 2);
+  return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
+}
+
+/**
+ * How many calls the main model takes for work of this category, from the
+ * episodes it handled itself in this scan window (`samples` maps
+ * "category|project" and "category|*" to their call counts). The project's
+ * own history wins when it has enough episodes, then the user's whole history,
+ * then DEFAULT_MAIN_CALLS.
+ */
+export function mainCallEstimate(samples, catId, projectDir) {
+  for (const key of [`${catId}|${projectDir}`, `${catId}|*`]) {
+    const list = samples?.get?.(key);
+    if (Array.isArray(list) && list.length >= MIN_MAIN_CALL_SAMPLES) return median(list);
+  }
+  return DEFAULT_MAIN_CALLS;
+}
+
 export function worthDelegating(tier, rank) {
   const target = TIER_TARGET_RANK[tier];
   return target !== undefined && rank > target;
@@ -426,14 +461,21 @@ export function runSaving(run, mainModel, { env = process.env } = {}) {
  * no price on either side) sends the run to the v2 formula instead, tagged
  * basis 'v2', so the figure is never invented. null still means unpriced.
  *
- * On v3 the result also carries `main`, the main model's token quantities the
+ * On v4 the result also carries `main`, the main model's token quantities the
  * saving is linear in (netSavingQuantities), which the ledger stores.
  *
- * @returns {{usd:number, basis:'v3'|'v2', main?:object, cfWork?:number, cfCarry?:number, overhead?:number}|null}
+ * Modified in realmi-lab/sprag-fork2 (2026-11): basis 'v4' is v3 with the
+ * subagent's start-up input left out, the main-context re-reads counted for
+ * `mainCalls` calls instead of the subagent's own call count, and the two main
+ * calls a delegation takes charged to the delegated side (net-saving.js).
+ * `mainCalls` comes from mainCallEstimate(); without one the shortest inline
+ * path (DEFAULT_MAIN_CALLS) is assumed, which errs low.
+ *
+ * @returns {{usd:number, basis:'v4'|'v2', main?:object, cfWork?:number, cfCarry?:number, overhead?:number, rereadCalls?:number}|null}
  */
-export function runSavingDetail(run, mainModel, info, { env = process.env } = {}) {
+export function runSavingDetail(run, mainModel, info, { env = process.env, mainCalls = DEFAULT_MAIN_CALLS } = {}) {
   if (!run.model || !mainModel) return null;
-  const v3 = (() => {
+  const v4 = (() => {
     if (!info || !Array.isArray(run.perCall) || run.perCall.length === 0) return null;
     if (!Number.isFinite(info.resultChars)) return null;
     const at = runTime(run);
@@ -449,12 +491,15 @@ export function runSavingDetail(run, mainModel, info, { env = process.env } = {}
       followUps: info.N,
       promptTokens: info.P,
       resultTokens: chars / 4,
+      skipFirstWrite: true,
+      mainCalls,
+      delegationCalls: DELEGATION_MAIN_CALLS,
     };
     const result = netSavingV3({ ...inputs, rates, subActual });
     if (!result) return null;
     return { ...result, main: netSavingQuantities(inputs) };
   })();
-  if (v3) return { basis: 'v3', ...v3 };
+  if (v4) return { basis: 'v4', ...v4 };
   const v2 = runSaving(run, mainModel, { env });
   return Number.isFinite(v2) ? { usd: v2, basis: 'v2' } : null;
 }
@@ -652,6 +697,9 @@ export async function runRouteScan({ days = 14, trace = null } = {}) {
   // per-category outcome stats that keep promoted model rules fresh.
   const groups = new Map(); // "tier|category|project" → aggregate
   const episodeStats = new Map(); // "category|project" (+ "category|*") → outcome stats
+  // Fork: call counts of episodes the main model handled itself, per category,
+  // for the v4 saving basis (mainCallEstimate).
+  const mainCallSamples = new Map(); // "category|project" (+ "category|*") → [calls]
   let tieredEpisodes = 0;
   const bumpStats = (key, ep) => {
     const s = episodeStats.get(key) || { count: 0, errCount: 0, failCount: 0, epCount: 0, baselineModel: null, modelCounts: {} };
@@ -688,6 +736,13 @@ export async function runRouteScan({ days = 14, trace = null } = {}) {
     const epRank = episodeRank(ep);
     if (!worthDelegating('T2', epRank)) continue; // already at the cheapest tier
     const cat = categorize(ep.text, ep.tools);
+    if (cat && !(ep.delegated > 0)) {
+      for (const key of [`${cat.id}|${projectDir}`, `${cat.id}|*`]) {
+        const list = mainCallSamples.get(key) || [];
+        list.push(ep.calls);
+        mainCallSamples.set(key, list);
+      }
+    }
     if (cat) {
       // rule-health denominator: episodes that LOOK delegable by shape
       // (tier judged with the error signal zeroed — using real errors here
@@ -848,7 +903,7 @@ export async function runRouteScan({ days = 14, trace = null } = {}) {
         }
         if (!runTier || !worthDelegating(runTier, mainRank)) continue;
         const info = run.toolUseId ? delegationInfoBySession.get(sessionPath)?.get(run.toolUseId) : undefined;
-        const saved = runSavingDetail(run, mainModel, info)?.usd ?? null;
+        const saved = runSavingDetail(run, mainModel, info, { mainCalls: mainCallEstimate(mainCallSamples, cat.id, projectDir) })?.usd ?? null;
         bumpDelegated(`${runTier}|${cat.id}|${projectDir}`, run, saved);
         bumpDelegated(`${runTier}|${cat.id}|*`, run, saved);
         // Routing saving: priced against the episode's main model (before →
@@ -996,7 +1051,7 @@ export async function runRouteScan({ days = 14, trace = null } = {}) {
       // erase a real one — worse than showing nothing. Map such ids in
       // profile-map.json's `modelAliases` to bring these runs back in.
       if (!baseline || !isRecognizedModelId(baseline)) continue;
-      const detail = runSavingDetail(e.run, baseline, e.info);
+      const detail = runSavingDetail(e.run, baseline, e.info, { mainCalls: mainCallEstimate(mainCallSamples, e.catId, e.projectDir) });
       // A loss is recorded too; only an unpriced run (null) has nothing to record.
       if (!detail || !Number.isFinite(detail.usd)) continue;
       const ts = e.run.endedAt ?? e.run.startedAt ?? Date.now();
@@ -1020,7 +1075,7 @@ export async function runRouteScan({ days = 14, trace = null } = {}) {
       event.q = {
         at: runTime(e.run) ?? ts,
         sub: runTotals(e.run),
-        ...(detail.basis === 'v3' && detail.main ? { main: detail.main } : {}),
+        ...((detail.basis === 'v4' || detail.basis === 'v3') && detail.main ? { main: detail.main } : {}),
       };
       const p = priceLedgerEvent(event);
       if (!p) continue;
@@ -1042,7 +1097,9 @@ export async function runRouteScan({ days = 14, trace = null } = {}) {
           startedAt: e.run.startedAt ?? null,
           cfCarry: detail.cfCarry,
           overhead: detail.overhead,
-          firstWrite: detail.basis === 'v3' ? (e.run.perCall[0].newIn * (unitRates(baseline, { at: runTime(e.run) })?.write ?? 0)) : 0,
+          // v4 leaves the subagent's start-up input out of the counterfactual.
+          firstWrite: 0,
+          rereadCalls: detail.rereadCalls ?? null,
           calls: e.run.calls,
           C: e.info?.C ?? null,
           N: e.info?.N ?? null,
