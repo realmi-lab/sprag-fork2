@@ -1,36 +1,11 @@
-sprag (npm: sprag-cli)
-Copyright 2026 rootstudioyaml
+long-reader
+Copyright 2026 realmi-lab
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (see LICENSE).
 
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
-Releases up to and including v3.47.0 were published under the MIT License.
-Anyone who received a copy under those terms keeps them for that copy; this
-change applies to later releases.
-
---------------------------------------------------------------------------------
-Trademarks
-
-Section 6 of the License grants no rights in the project's names or marks.
-"sprag", the sprag logo and the domain sprag.io are not licensed for use in a
-way that states or implies endorsement of a fork or a derived distribution, or
-as the name of a fork, a modified build or a hosted service. The permitted uses
-are listed in TRADEMARK.md at the root of the repository
-(https://github.com/rootstudioyaml/sprag/blob/main/TRADEMARK.md).
-
-----------------------------------------------------------------------
-
-This repository (realmi-lab/sprag-fork2) is a modified fork of the work
-above, based on upstream v3.109.0 (commit 381613e). The modified files
-carry a "Modified in realmi-lab/sprag-fork2" note, and FORK_CHANGES.md
-lists every change. This fork is not affiliated with or endorsed by the
+This repository started as a fork of rootstudioyaml/sprag. This branch
+contains none of sprag's code: only a Claude Code subagent definition, its
+install scripts and documentation written for this repository. The earlier
+modified sprag code is kept on the branches review-fixes-2026-11 and
+upstream-3.109.0. This project is not affiliated with or endorsed by the
 sprag project.
