@@ -1,5 +1,5 @@
 > **비공식 포크입니다.** 이 저장소 [realmi-lab/sprag-fork2](https://github.com/realmi-lab/sprag-fork2)는 [rootstudioyaml/sprag](https://github.com/rootstudioyaml/sprag) v3.109.0을 바탕으로 고친 포크입니다. sprag 프로젝트가 관리하거나 보증하지 않으므로, 이 포크의 문제는 원본이 아니라 여기에 알려 주십시오.
-> 무엇을 왜 바꿨는지: [FORK_CHANGES.md](FORK_CHANGES.md) · 근거가 된 리뷰와 실측: [docs/REVIEW-2026-11.ko.md](docs/REVIEW-2026-11.ko.md)
+> 무엇을 왜 바꿨는지: [FORK_CHANGES.md](FORK_CHANGES.md)
 > 아래 수치는 원본 저장소가 잰 것입니다. 이 포크가 고친 절감 장부(v3)와 상한 없는 문서 기준선으로 계산한 값입니다.
 
 <div align="center">

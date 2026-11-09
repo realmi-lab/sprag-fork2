@@ -1,5 +1,5 @@
 // Added in realmi-lab/sprag-fork2 (2026-11): the v4 saving basis.
-// See FORK_CHANGES.md and docs/REVIEW-2026-11.ko.md for the measurements below.
+// See FORK_CHANGES.md for the measurements below.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { netSavingV3, netSavingQuantities, savingFromQuantities } from '../src/net-saving.js';

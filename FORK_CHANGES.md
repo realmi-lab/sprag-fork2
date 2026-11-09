@@ -1,8 +1,8 @@
 # 이 포크에서 바뀐 것
 
-This repository is a modified fork of [rootstudioyaml/sprag](https://github.com/rootstudioyaml/sprag) (Apache License 2.0), based on upstream v3.109.0 (commit `381613e`). Every modified file carries a "Modified in realmi-lab/sprag-fork2" note, and the changes are listed below. This fork is not affiliated with or endorsed by the sprag project. The review and measurements behind these changes are in [docs/REVIEW-2026-11.ko.md](docs/REVIEW-2026-11.ko.md) (Korean).
+This repository is a modified fork of [rootstudioyaml/sprag](https://github.com/rootstudioyaml/sprag) (Apache License 2.0), based on upstream v3.109.0 (commit `381613e`). Every modified file carries a "Modified in realmi-lab/sprag-fork2" note, and the changes are listed below. This fork is not affiliated with or endorsed by the sprag project.
 
-아래 다섯 가지를 고쳤습니다. 각 항목에는 바꾼 파일, 이유, 기존 사용자에게 미치는 영향을 적었습니다. 근거가 된 리뷰와 실측은 [docs/REVIEW-2026-11.ko.md](docs/REVIEW-2026-11.ko.md)에 있습니다.
+아래 다섯 가지를 고쳤습니다. 각 항목에는 바꾼 파일, 이유, 기존 사용자에게 미치는 영향을 적었습니다.
 
 ## 1. 절감 장부: v3 → v4
 
