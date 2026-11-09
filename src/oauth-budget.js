@@ -1,8 +1,9 @@
 /**
  * oauth-budget: claude.ai 로 로그인한 Enterprise 사용자의 usage-credit 예산을 조회합니다.
  *
- * 이 사용자들은 Claude Code 상태줄 입력에 rate_limits 를 받지 못합니다. 기본으로 켜져
- * 있으며 `GET https://api.anthropic.com/api/oauth/usage` 응답의 extra_usage 로
+ * 이 사용자들은 Claude Code 상태줄 입력에 rate_limits 를 받지 못합니다. 포크
+ * (realmi-lab/sprag-fork2)에서는 기본으로 꺼져 있고, 켜면
+ * `GET https://api.anthropic.com/api/oauth/usage` 응답의 extra_usage 로
  * 예산 게이지(`💳 budget ▰▱ 54% $271/$500`)를 그립니다. 공식 문서에 없는
  * 엔드포인트라서 응답 모양이 다르면 아무것도 그리지 않습니다.
  *
@@ -56,10 +57,17 @@ function writeOauthState(next) {
   writeFileSync(oauthStatePath(), JSON.stringify(next, null, 2) + '\n');
 }
 
-/** 기본으로 켜져 있습니다. `sprag mode no-oauth-budget` 이나 SPRAG_OAUTH_BUDGET=0 으로 끕니다. */
+/**
+ * 포크(realmi-lab/sprag-fork2, 2026-11)에서는 기본으로 꺼져 있습니다. 켜면 Claude Code 의
+ * OAuth 액세스 토큰을 키체인에서 읽어 문서에 없는 엔드포인트로 보내므로, 그 일을 하지 않는
+ * 쪽을 기본으로 둡니다. `sprag mode oauth-budget` 이나 SPRAG_OAUTH_BUDGET=1 로 켜고,
+ * SPRAG_OAUTH_BUDGET=0 은 설정과 상관없이 끕니다.
+ */
 export function oauthBudgetEnabled(cfg = loadConfig(), env = process.env) {
-  if (envVar('OAUTH_BUDGET', env) === '0') return false;
-  return cfg?.statusline?.oauthBudget !== false;
+  const flag = envVar('OAUTH_BUDGET', env);
+  if (flag === '0') return false;
+  if (flag === '1') return true;
+  return cfg?.statusline?.oauthBudget === true;
 }
 
 /** 게이트웨이, API 키, 클라우드 공급자 사용자는 OAuth 로그인 사용자가 아닙니다. */

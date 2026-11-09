@@ -59,8 +59,9 @@ const KEYWORDS = {
   // Model-share bar and letters beside the routing chip; on unless switched off.
   share:      { key: 'modelShare', value: true  },
   'no-share': { key: 'modelShare', value: false },
-  // Enterprise(claude.ai 로그인) 사용자의 usage-credit 예산 게이지. 기본으로 켜져 있고
-  // rate_limits 가 오는 Pro 와 Max 는 조회하지 않는다. src/oauth-budget.js 참고.
+  // Enterprise(claude.ai 로그인) 사용자의 usage-credit 예산 게이지. 포크(realmi-lab/sprag-fork2)
+  // 에서는 기본으로 꺼져 있고 `sprag mode oauth-budget` 으로 켠다. 켜면 Claude Code 의
+  // OAuth 토큰을 키체인에서 읽는다. rate_limits 가 오는 Pro 와 Max 는 조회하지 않는다.
   'oauth-budget':    { key: 'oauthBudget', value: true  },
   'no-oauth-budget': { key: 'oauthBudget', value: false },
 };
@@ -203,7 +204,8 @@ export function statuslineDefaults() {
     timer:       s.timer   !== false,
     color:       s.color   !== false,
     modelShare:  s.modelShare !== false,
-    oauthBudget: s.oauthBudget !== false,
+    // Fork: opt-in, because turning it on reads Claude Code's OAuth token.
+    oauthBudget: s.oauthBudget === true,
     windowHours,
     windowLabel: formatWindow(windowHours),
     // 'auto' | '5m' | '1h'. Auto lets the measured split decide and falls back
