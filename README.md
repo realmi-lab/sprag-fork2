@@ -25,8 +25,6 @@
 - **대신 조금 느려집니다.** 하위 에이전트가 따로 시작하기 때문입니다.
 - **수치의 한계:** 조건마다 한 번씩만 잰 값이고, Claude Code가 계산한 정가 환산입니다. 구독 요금제에서는 돈이 아니라 사용 한도가 덜 줄어듭니다.
 
-측정 방법과 전체 숫자는 [docs/REVIEW-2026-11.ko.md](docs/REVIEW-2026-11.ko.md)에 있습니다.
-
 ## 설치
 
 ```bash
@@ -96,8 +94,7 @@ sprag에는 이 저장소에 없는 기능도 있습니다.
 
 이런 기능이 필요하면 sprag를 쓰십시오. 다만 리뷰에서 확인한 문제가 있습니다. 절감 장부를 실제보다 크게 기록하고, 자동 등록한 룰을 "사용자가 승인했다"고 모델에 알리며, 팀 룰에 서명이 없습니다.
 
-- 리뷰와 실측: [docs/REVIEW-2026-11.ko.md](docs/REVIEW-2026-11.ko.md)
-- 이 문제들을 고친 sprag 수정본: [`review-fixes-2026-11` 브랜치](https://github.com/realmi-lab/sprag-fork2/tree/review-fixes-2026-11)와 [PR #1](https://github.com/realmi-lab/sprag-fork2/pull/1)
+이 문제들을 고친 sprag 수정본은 [`review-fixes-2026-11` 브랜치](https://github.com/realmi-lab/sprag-fork2/tree/review-fixes-2026-11)와 [PR #1](https://github.com/realmi-lab/sprag-fork2/pull/1)에 있습니다.
 
 이 프로젝트는 sprag 프로젝트와 관계가 없고, sprag 프로젝트가 보증하지도 않습니다.
 
