@@ -40,7 +40,7 @@
 
 import { categorizeScored, ESCALATE_RE, JUDGE_RE, EDIT_RE, worthDelegating } from './route-scan.js';
 import { delegationGrade, normalizeDelegationGrade, gradeKeepsRule } from './routing-switch.js';
-import { loadModelRules, budgetCapPhrase, ruleBudget } from './model-rules.js';
+import { loadModelRules, budgetCapPhrase, ruleBudget, isUserApprovedRule } from './model-rules.js';
 import { sharedProjectRoots, realProjectRoot, scopeRank } from './shared-model-rules.js';
 import { agentPhrase, agentPhraseEn, resolveAgentName, agentForRule, TIER_MODEL } from './agents.js';
 import { userLanguage } from './config.js';
@@ -567,6 +567,24 @@ export function routeHint(text, { rules, lang = userLanguage(), root, sessionRan
     : (ko ? `상한 ${caps[0]}` : `cap ${caps[0]}`);
 
   const extra = pressureLine(pressure, { lang });
+  // Fork (realmi-lab/sprag-fork2, 2026-11): a default preset the automatic
+  // install registered was never approved by the user, so its hint neither says
+  // it was nor tells the model not to ask; it recommends, and leaves short
+  // one- or two-command work on the main model (isUserApprovedRule).
+  if (!picked.every(isUserApprovedRule)) {
+    const presetBody = ko
+      ? `✇ [sprag] 이 요청은 sprag 기본 프리셋 위임 룰 "${label}" 에 해당합니다(설치 때 자동 등록, 사용자 개별 승인 없음). `
+        + `읽을 양이 많고 결과는 짧은 일이면 ${target} 로 위임을 권합니다 (${capText}). 명령 한두 번으로 끝나고 출력도 짧으면 직접 처리하십시오. `
+        + `위임할 때는 \`✇ [sprag] 모델 피팅: "${label}" → <agent> (<모델> · effort <effort>) 위임\` 을 먼저 표시하십시오. `
+        + `모델과 effort 값은 위 에이전트 표기에 적힌 그대로 쓰고, Agent 도구의 description 맨 앞에도 \`[<모델> · <effort>]\` 를 붙이십시오. `
+        + `상한을 넘길 것 같거나 에러가 나면 그 자리에서 멈추고 메인 모델이 이어받습니다.`
+      : `✇ [sprag] This request matches a default sprag preset delegation rule — "${label}" (registered at install, not individually approved by the user). `
+        + `When there is a lot to read and little to report, delegating to ${target} is recommended (${capText}); for one or two commands with short output, do it yourself. `
+        + `When you delegate, print \`✇ [sprag] model fit: "${label}" → <agent> (<model> · effort <effort>)\` first, `
+        + `with the model and effort the agent's phrase above gives, and start the Agent tool's description with \`[<model> · <effort>]\`. `
+        + `If the run is likely to exceed its cap or hits an error, stop there and the main model takes over.`;
+    return extra ? `${presetBody}\n${extra}` : presetBody;
+  }
   // The marker line is the one in ratchet-model.md, so the user sees the same
   // string whichever path decided to delegate.
   const body = ko

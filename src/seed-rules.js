@@ -15,11 +15,15 @@
  * or, when one has been fetched and verifies, the centrally published bundle
  * with the same shape (presets-source.js).
  *
- * Nothing is written without the user agreeing to that specific rule. The
- * SessionStart hook lists what is pending and tells the model to ask one rule at
- * a time; each answer is recorded in the state dir, so a declined rule stays
- * declined across sessions and upgrades, and a preset added in a later release
- * shows up as the only pending item rather than re-asking the whole set.
+ * Two ways in. `sprag seed` and the SessionStart hook ask one rule at a time;
+ * each answer is recorded in the state dir, so a declined rule stays declined
+ * across sessions and upgrades, and a preset added in a later release shows up
+ * as the only pending item rather than re-asking the whole set. The automatic
+ * install (`sprag install` without --manual, which npm's postinstall runs)
+ * registers every pending preset without asking. Fork (realmi-lab/sprag-fork2,
+ * 2026-11): those are recorded with `confirmed: false` and their model rules
+ * with `userConfirmed: false`, so the rule file and the prompt hint call them
+ * default presets instead of rules the user approved (isUserApprovedRule).
  *
  * State file: <stateDir>/seed-state.json
  *   { decided: { "<id>": { action: 'accepted' | 'skipped', at, scope? } } }
@@ -191,7 +195,7 @@ function recordDecision(id, action, extra = {}, { agent = 'claude' } = {}) {
  *
  * Returns { id, kind, scope, path?, rule } or null when the id is not pending.
  */
-export async function acceptSeed(id, { scope, root = findProjectRoot(), lang = userLanguage(), agent = 'claude' } = {}) {
+export async function acceptSeed(id, { scope, root = findProjectRoot(), lang = userLanguage(), agent = 'claude', confirmed = true } = {}) {
   // No default: a rule in the wrong scope is noise everywhere or missing where it mattered.
   if (scope !== 'global' && scope !== 'project') throw new Error('acceptSeed needs an explicit scope: global or project');
   const seed = findSeed(id, { lang, root, agent });
@@ -202,13 +206,13 @@ export async function acceptSeed(id, { scope, root = findProjectRoot(), lang = u
     // from the recorded answer; a project one is the user's placement and is
     // appended to that project's ratchet.md as before.
     if (scope === 'global') {
-      recordDecision(id, 'accepted', { scope }, { agent });
+      recordDecision(id, 'accepted', { scope, confirmed }, { agent });
       const { syncPresetRatchet } = await import('./preset-ratchet.js');
       const res = syncPresetRatchet({ agent, lang });
       return { id, kind: 'ratchet', scope, path: res.file, rule: seed.ruleText };
     }
     const res = harnessPromote(seed.ruleText, { root, scope, agent });
-    recordDecision(id, 'accepted', { scope }, { agent });
+    recordDecision(id, 'accepted', { scope, confirmed }, { agent });
     return { id, kind: 'ratchet', scope, path: res.path, rule: seed.ruleText };
   }
 
@@ -246,6 +250,8 @@ export async function acceptSeed(id, { scope, root = findProjectRoot(), lang = u
     // Marks the rule as seeded rather than measured, so the rendered file does
     // not report someone else's recurrence count as this user's evidence.
     origin: 'preset',
+    // Fork: false when the automatic install registered it without asking.
+    userConfirmed: confirmed === true,
     approvedBy: agent,
     promotedAt: today,
     lastSeen: today,
@@ -253,7 +259,7 @@ export async function acceptSeed(id, { scope, root = findProjectRoot(), lang = u
   // Codex-first installs need only the registry. Claude renders its view when
   // it is installed or starts a session, without creating .claude here.
   const written = agent === 'codex' ? [] : syncAllFiles();
-  recordDecision(id, 'accepted', { scope, targetRoot: scope === 'project' ? resolve(root) : null }, { agent });
+  recordDecision(id, 'accepted', { scope, targetRoot: scope === 'project' ? resolve(root) : null, confirmed }, { agent });
   return { id, kind: 'model', scope, paths: written,
     rule: agent === 'codex' ? codexSeedText(p, lang) : composeRuleText(entry.rule, entry, lang) };
 }
